@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>保險費用計算器 - 總管家包租代管專用</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Noto+Sans+TC', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+        <!-- Header -->
+        <div class="bg-blue-600 p-6 text-white text-center sm:text-left">
+            <h1 class="text-2xl font-bold flex items-center justify-center sm:justify-start">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.040A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                保險費用計算器
+            </h1>
+            <p class="text-blue-100 text-sm mt-1">總管家包租代管 專業工具系統</p>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <!-- Inputs -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">保險總年費 (年度金額)</label>
+                    <input type="number" id="amount" placeholder="例如：3650" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">保險截止日</label>
+                    <input type="date" id="endDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">保險起始日</label>
+                    <input type="date" id="startDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">申請起始日</label>
+                    <input type="date" id="appDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                </div>
+            </div>
+
+            <!-- Calculation Button -->
+            <button onclick="calculateInsurance()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition-colors shadow-lg active:transform active:scale-95 text-lg">
+                立即計算比例費用
+            </button>
+
+            <!-- Result Box -->
+            <div id="resultBox" class="hidden mt-6 p-6 rounded-xl border-2 border-dashed border-blue-200 bg-blue-50">
+                <div class="flex justify-between items-center mb-4 border-b border-blue-100 pb-2">
+                    <h2 class="text-lg font-bold text-gray-800">計算結果摘要</h2>
+                    <span id="leapYearBadge" class="px-3 py-1 text-xs font-bold rounded-full"></span>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="flex justify-between text-gray-600">
+                        <span>基準起始日 (取晚者):</span>
+                        <span id="baseStartDateDisplay" class="font-bold text-gray-900">-</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600">
+                        <span>保費年度分母:</span>
+                        <span id="yearDenominatorDisplay" class="font-bold text-gray-900">-</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600">
+                        <span>計算天數 (含當日):</span>
+                        <span id="totalDaysDisplay" class="font-bold text-gray-900">-</span>
+                    </div>
+                    <div class="pt-4 border-t border-blue-200 flex flex-col items-center sm:flex-row sm:justify-between">
+                        <span class="text-gray-800 font-bold text-lg mb-2 sm:mb-0">應繳保險費用:</span>
+                        <div class="text-right">
+                            <span id="totalAmountDisplay" class="text-4xl font-black text-blue-700">NT$ 0</span>
+                            <p class="text-xs text-gray-400 mt-1">*結果採四捨五入計算</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorBox" class="hidden mt-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
+                <p id="errorMessage"></p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gray-100 p-4 text-center text-xs text-gray-500">
+            © 總管家包租代管 | 工具版本 v1.1 (精確閏年版)
+        </div>
+    </div>
+
+    <script>
+        function isLeapYear(year) {
+            return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+        }
+
+        function calculateInsurance() {
+            const amount = parseFloat(document.getElementById('amount').value);
+            const endDateInput = document.getElementById('endDate').value;
+            const startDateInput = document.getElementById('startDate').value;
+            const appDateInput = document.getElementById('appDate').value;
+
+            const resultBox = document.getElementById('resultBox');
+            const errorBox = document.getElementById('errorBox');
+            const leapYearBadge = document.getElementById('leapYearBadge');
+
+            // Reset UI
+            errorBox.classList.add('hidden');
+            resultBox.classList.add('hidden');
+
+            // Validation
+            if (isNaN(amount) || !endDateInput || !startDateInput || !appDateInput) {
+                showError('請輸入正確的年費金額與完整日期。');
+                return;
+            }
+
+            const endDate = new Date(endDateInput);
+            const startDate = new Date(startDateInput);
+            const appDate = new Date(appDateInput);
+
+            // Logic: Pick the later date
+            const baseStartDate = new Date(Math.max(startDate, appDate));
+            const baseYear = baseStartDate.getFullYear();
+            
+            // Check leap year
+            const daysInYear = isLeapYear(baseYear) ? 366 : 365;
+            
+            // Check if end date is valid
+            if (endDate < baseStartDate) {
+                showError('錯誤：截止日不能早於基準起始日。');
+                return;
+            }
+
+            // Calculate Days
+            const diffTime = endDate.getTime() - baseStartDate.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+            // Formula: (Days / YearDays) * AnnualAmount
+            const totalCost = (diffDays / daysInYear) * amount;
+
+            // Display Results
+            document.getElementById('baseStartDateDisplay').innerText = baseStartDate.toISOString().split('T')[0];
+            document.getElementById('yearDenominatorDisplay').innerText = `${daysInYear} 天 (西元 ${baseYear} 年)`;
+            document.getElementById('totalDaysDisplay').innerText = `${diffDays} 天`;
+            document.getElementById('totalAmountDisplay').innerText = 'NT$ ' + Math.round(totalCost).toLocaleString();
+            
+            leapYearBadge.innerText = isLeapYear(baseYear) ? '閏年分母 366' : '平年分母 365';
+            leapYearBadge.className = isLeapYear(baseYear) 
+                ? 'px-3 py-1 bg-orange-200 text-orange-800 text-xs font-bold rounded-full' 
+                : 'px-3 py-1 bg-blue-200 text-blue-800 text-xs font-bold rounded-full';
+
+            resultBox.classList.remove('hidden');
+            
+            // Scroll to result on mobile
+            if (window.innerWidth < 768) {
+                resultBox.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function showError(msg) {
+            const errorBox = document.getElementById('errorBox');
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.innerText = msg;
+            errorBox.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
